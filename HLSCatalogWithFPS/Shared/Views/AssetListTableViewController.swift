@@ -176,11 +176,12 @@ class AssetListTableViewController: UITableViewController {
 #if os(iOS)
     @objc
     func handleContentKeyDelegateDidSaveAllPersistableContentKey(notification: Notification) {
+        print("AssetListTableViewController.handleContentKeyDelegateDidSaveAllPersistableContentKey")
         guard let assetName = notification.userInfo?["name"] as? String,
             let asset = self.pendingContentKeyRequests.removeValue(forKey: assetName) else {
             return
         }
-        
+        print("assetName=" + assetName)
         AssetPersistenceManager.sharedManager.downloadStream(for: asset)
     }
 #endif

@@ -8,18 +8,14 @@
 
 import Foundation
 
+// TODO Add DRM URL and auth token
 class Stream: Codable {
-    
-    // MARK: Types
-    
     enum CodingKeys: String, CodingKey {
         case name = "name"
         case playlistURL = "playlist_url"
         case isProtected = "is_protected"
         case contentKeyIDList = "content_key_id_list"
     }
-    
-    // MARK: Properties
     
     /// The name of the stream.
     let name: String

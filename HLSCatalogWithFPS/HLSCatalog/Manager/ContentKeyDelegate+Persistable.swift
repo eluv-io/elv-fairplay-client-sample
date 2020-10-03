@@ -16,6 +16,7 @@ extension ContentKeyDelegate {
      -respondByRequestingPersistableContentKeyRequest.
      */
     func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVPersistableContentKeyRequest) {
+        print("ContentKeyDelegate+Persistable.contentKeySession")
         handlePersistableContentKeyRequest(keyRequest: keyRequest)
     }
     
@@ -54,6 +55,7 @@ extension ContentKeyDelegate {
                 print("Failed to retrieve the assetID from the keyRequest!")
                 return
         }
+        print("ContentKeyDelegate+Persistable.contentKeySession forContentKeyIdentifier " + contentKeyIdentifierString)
         
         do {
             deletePeristableContentKey(withContentKeyIdentifier: assetIDString)
@@ -85,10 +87,16 @@ extension ContentKeyDelegate {
                 print("Failed to retrieve the assetID from the keyRequest!")
                 return
         }
+        print("ContentKeyDelegate+Persistable.handlePersistableContentKeyRequest keyRequest " + contentKeyIdentifierString)
         
         do {
-
+            // If there are 2 keys, the completion handler may have concurrency
+            // issues. contentKeyToStreamNameMap.removeValue was crashing before
+            // when the second call would return nil. We guard for that now but
+            // we may need to investigate further.
             let completionHandler = { [weak self] (spcData: Data?, error: Error?) in
+                print("ContentKeyDelegate+Persistable.handlePersistableContentKeyRequest completionHandler assetIDString " + assetIDString)
+                
                 guard let strongSelf = self else { return }
                 if let error = error {
                     keyRequest.processContentKeyResponseError(error)
@@ -118,12 +126,15 @@ extension ContentKeyDelegate {
                      */
                     keyRequest.processContentKeyResponse(keyResponse)
                     
-                    let assetName = strongSelf.contentKeyToStreamNameMap.removeValue(forKey: assetIDString)!
-                    
-                    if !strongSelf.contentKeyToStreamNameMap.values.contains(assetName) {
-                        NotificationCenter.default.post(name: .DidSaveAllPersistableContentKey,
-                                                        object: nil,
-                                                        userInfo: ["name": assetName])
+                    if let value = strongSelf.contentKeyToStreamNameMap.removeValue(forKey: assetIDString) {
+                        let assetName = value as String
+                        if !strongSelf.contentKeyToStreamNameMap.values.contains(assetName) {
+                            NotificationCenter.default.post(name: .DidSaveAllPersistableContentKey,
+                                                            object: nil,
+                                                            userInfo: ["name": assetName])
+                        }
+                    } else {
+                        print("No value found for assetIDString " + assetIDString)
                     }
                     
                     strongSelf.pendingPersistableContentKeyIdentifiers.remove(assetIDString)
@@ -184,6 +195,7 @@ extension ContentKeyDelegate {
     ///
     /// - Parameter asset: The `Asset` value to remove keys for.
     func deleteAllPeristableContentKeys(forAsset asset: Asset) {
+        print("ContentKeyDelegate+Persistable.deleteAllPeristableContentKeys")
         for contentKeyIdentifier in asset.stream.contentKeyIDList ?? [] {
             deletePeristableContentKey(withContentKeyIdentifier: contentKeyIdentifier)
         }
@@ -193,6 +205,7 @@ extension ContentKeyDelegate {
     ///
     /// - Parameter contentKeyIdentifier: The host value of an `AVPersistableContentKeyRequest`. (i.e. "tweleve" in "skd://tweleve").
     func deletePeristableContentKey(withContentKeyIdentifier contentKeyIdentifier: String) {
+        print("ContentKeyDelegate+Persistable.deletePeristableContentKey withContentKeyIdentifier " + contentKeyIdentifier)
         
         guard persistableContentKeyExistsOnDisk(withContentKeyIdentifier: contentKeyIdentifier) else { return }
         
@@ -212,6 +225,7 @@ extension ContentKeyDelegate {
     /// - Parameter contentKeyIdentifier: The host value of an `AVPersistableContentKeyRequest`. (i.e. "tweleve" in "skd://tweleve").
     /// - Returns: `true` if the key exists on disk, `false` otherwise.
     func persistableContentKeyExistsOnDisk(withContentKeyIdentifier contentKeyIdentifier: String) -> Bool {
+        print("ContentKeyDelegate+Persistable.persistableContentKeyExistsOnDisk withContentKeyIdentifier " + contentKeyIdentifier)
         let contentKeyURL = urlForPersistableContentKey(withContentKeyIdentifier: contentKeyIdentifier)
         
         return FileManager.default.fileExists(atPath: contentKeyURL.path)
@@ -224,6 +238,7 @@ extension ContentKeyDelegate {
     /// - Parameter contentKeyIdentifier: The host value of an `AVPersistableContentKeyRequest`. (i.e. "tweleve" in "skd://tweleve").
     /// - Returns: The fully resolved file URL.
     func urlForPersistableContentKey(withContentKeyIdentifier contentKeyIdentifier: String) -> URL {
+        print("ContentKeyDelegate+Persistable.urlForPersistableContentKey withContentKeyIdentifier " + contentKeyIdentifier)
         return contentKeyDirectory.appendingPathComponent("\(contentKeyIdentifier)-Key")
     }
     
@@ -234,7 +249,7 @@ extension ContentKeyDelegate {
     ///   - contentKeyIdentifier: The host value of an `AVPersistableContentKeyRequest`. (i.e. "tweleve" in "skd://tweleve").
     /// - Throws: If an error occurs during the file write process.
     func writePersistableContentKey(contentKey: Data, withContentKeyIdentifier contentKeyIdentifier: String) throws {
-        
+        print("ContentKeyDelegate+Persistable.writePersistableContentKey withContentKeyIdentifier " + contentKeyIdentifier)
         let fileURL = urlForPersistableContentKey(withContentKeyIdentifier: contentKeyIdentifier)
         
         try contentKey.write(to: fileURL, options: Data.WritingOptions.atomicWrite)

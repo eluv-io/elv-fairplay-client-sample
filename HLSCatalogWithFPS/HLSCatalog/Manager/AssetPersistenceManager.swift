@@ -71,6 +71,7 @@ class AssetPersistenceManager: NSObject {
     
     /// Triggers the initial AVAssetDownloadTask for a given Asset.
     func downloadStream(for asset: Asset) {
+        print("AssetPersistenceManager.downloadStream for asset " + asset.stream.name)
         
         // Get the default media selections for the asset's media selection groups.
         let preferredMediaSelection = asset.urlAsset.preferredMediaSelection
