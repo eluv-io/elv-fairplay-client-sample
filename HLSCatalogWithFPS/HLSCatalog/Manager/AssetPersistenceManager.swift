@@ -125,10 +125,8 @@ class AssetPersistenceManager: NSObject {
         var asset: Asset?
         var bookmarkDataIsStale = false
         do {
-            guard let url = try URL(resolvingBookmarkData: localFileLocation,
-                                    bookmarkDataIsStale: &bookmarkDataIsStale) else {
-                                        fatalError("Failed to create URL from bookmark!")
-            }
+            let url = try URL(resolvingBookmarkData: localFileLocation,
+                              bookmarkDataIsStale: &bookmarkDataIsStale)
             
             if bookmarkDataIsStale {
                 fatalError("Bookmark data is stale!")
