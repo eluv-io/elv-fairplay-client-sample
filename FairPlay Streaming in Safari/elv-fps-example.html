@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Eluvio FPS Example</title>
+<script>
+
+const authToken = 'eyJxc3BhY2VfaWQiOiJpc3BjMlJVb1JlOWVSMnYzM0hBUlFVVlNwMXJZWHp3MSIsInFsaWJfaWQiOiJpbGliMmRoMXl3YXpVUHo0Y2FHQ2tEaHRnR1J5enRUaSIsImFkZHIiOiIweDIwMDM3RDRiZjkyYkI0YmZhMDQ3MTRiMWQ4RDdFYkU2OGJmRWUxRUMiLCJxaWQiOiJpcV9fMm1MTFZuWWJmalZvZUhwc0EyOHpLZVlLeFlERSIsImdyYW50IjoicmVhZCIsInR4X3JlcXVpcmVkIjpmYWxzZSwiaWF0IjoxNjAyMjg5MTk5LCJleHAiOjE2MDIzNzU1OTksImN0eCI6eyJ1c3IiOnsiYWNjZXNzX3RpbWUiOiIxNjAyMjg5MTk5NTc0IiwiY29udGVudF9pZCI6ImlxX18ybUxMVm5ZYmZqVm9lSHBzQTI4ektlWUt4WURFIiwiZHJtIjoiIiwiZm9ybWF0IjoiIiwiaG9zdG5hbWUiOiJob3N0LTY2LTIyMC0zLTg3LmNvbnRlbnRmYWJyaWMuaW8iLCJsYW5ndWFnZSI6ImVuLXVzIiwidXNlcl9hZGRyZXNzIjoiMHgyMDAzN2Q0YmY5MmJiNGJmYTA0NzE0YjFkOGQ3ZWJlNjhiZmVlMWVjIiwidXNlcl9zdHJpbmciOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC82MDUuMS4xNSAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vMTQuMCBTYWZhcmkvNjA1LjEuMTUifX0sImF1dGhfc2lnIjoiRVMyNTZLXzlDRU5VbkVxTkFlVmZRTXMxbXRhZ1o1eW5jaTFyeXBpdGROZ3VTTmVjTHZOeTNoemloSkhtS2FxTnY5RzU5UjFja3luQXo5ZkdHWXJ4WFVCbmVhUXRIellmIiwiYWZnaF9wayI6IiJ9.RVMyNTZLXzZvZGJLRVpSaXRqdGpaOENic1A1OUZ4YldBbzdtOXh3YXRCYXVDNndMUUhIcFBQdGJWRnVCV3pRbVVMVmFUam52eW9jazY4RXpSVHN2U25UTVZOa29wN2dQ';
+const baseContentURL = 'https://host-66-220-3-85.contentfabric.io/qlibs/ilib2dh1ywazUPz4caGCkDhtgGRyztTi/q/hq__GTR1HuNTNX4LrNXNgjXizzmde4PpLrRnD3QKa13jkqXAaut2BzNop7UPBu4wo879dND8CnuC2c/rep/playout/default/';
+let offerings;
+
+function sendOptionsRequest() {
+    let request = new XMLHttpRequest();
+    request.responseType = 'json';
+    request.addEventListener('load', onOptionsLoaded, false);
+    request.addEventListener('error', onOptionsError, false);
+    request.open('GET', baseContentURL + 'options.json', true);
+    setCommonHeaders(request)
+    request.send();
+}
+
+function onOptionsError(event) {
+    window.console.error('Offerings request failed', event.target)
+}
+
+// Options/Offerings response structure:
+// "hls-fairplay": {
+//   "properties": {
+//     "cert": "base64",
+//     "drm": "fairplay",
+//     "license_servers": [
+//       "https://host-209-51-161-245.contentfabric.io/ks/fps/",
+//       "https://host-38-142-50-106.contentfabric.io/ks/fps/"
+//     ],
+//     "protocol": "hls",
+//   },
+//   "uri": "hls-fairplay/playlist.m3u8"
+// }
+function onOptionsLoaded(event) {
+    let request = event.target;
+    if (request.status > 300) {
+        window.console.error('Offerings request failed', request.status);
+        return;
+    }
+    offerings = request.response
+    window.console.log('Offerings loaded', offerings);
+
+    let video = document.getElementsByTagName('video')[0];
+    video.addEventListener('webkitneedkey', onNeedKey, false);
+    video.addEventListener('error', onVideoError, false);
+    video.src = baseContentURL + offerings['hls-fairplay'].uri + '?authorization=' + authToken;
+}
+
+function onVideoError(event) {
+    window.console.error('Video error', event.target)
+}
+
+function onNeedKey(event) {
+    let video = event.target;
+    let initData = event.initData;
+    let contentId = extractContentId(initData);
+    let cert64 = offerings['hls-fairplay'].properties['cert'];
+    let cert = base64DecodeUint8Array(cert64)
+    initData = concatInitDataIdAndCertificate(initData, contentId, cert);
+
+    if (!video.webkitKeys) {
+        let keySystem = selectKeySystem();
+        video.webkitSetMediaKeys(new WebKitMediaKeys(keySystem));
+    }
+    if (!video.webkitKeys)
+        throw 'Could not create MediaKeys';
+
+    let keySession = video.webkitKeys.createSession('video/mp4', initData);
+    if (!keySession)
+        throw 'Could not create key session';
+
+    keySession.contentId = contentId;
+    keySession.addEventListener('webkitkeymessage', licenseRequestReady, false);
+    keySession.addEventListener('webkitkeyadded', onKeyAdded, false);
+    keySession.addEventListener('webkitkeyerror', onKeyError, false);
+}
+
+// https://github.com/google/shaka-player/blob/master/lib/util/fairplay_utils.js
+function extractContentId(initData) {
+    // The first part is a 4 byte little-endian int, which is the length of the second part.
+    let contentId = arrayToString(initData).slice(2);
+    // contentId is passed up as a URI, from which the host must be extracted:
+    let link = document.createElement('a');
+    link.href = contentId;
+    return link.hostname;
+}
+
+function concatInitDataIdAndCertificate(initData, id, cert) {
+    if (typeof id == 'string')
+        id = stringToArray(id);
+    // layout is [initData][4 byte: idLength][idLength byte: id][4 byte: certLength][certLength byte: cert]
+    let offset = 0;
+    let buffer = new ArrayBuffer(initData.byteLength + 4 + id.byteLength + 4 + cert.byteLength);
+    let dataView = new DataView(buffer);
+
+    let initDataArray = new Uint8Array(buffer, offset, initData.byteLength);
+    initDataArray.set(initData);
+    offset += initData.byteLength;
+
+    dataView.setUint32(offset, id.byteLength, true);
+    offset += 4;
+
+    let idArray = new Uint16Array(buffer, offset, id.length);
+    idArray.set(id);
+    offset += idArray.byteLength;
+
+    dataView.setUint32(offset, cert.byteLength, true);
+    offset += 4;
+
+    let certArray = new Uint8Array(buffer, offset, cert.byteLength);
+    certArray.set(cert);
+
+    return new Uint8Array(buffer, 0, buffer.byteLength);
+}
+
+function selectKeySystem() {
+    if (WebKitMediaKeys.isTypeSupported('com.apple.fps.1_0', 'video/mp4')) {
+        return 'com.apple.fps.1_0';
+    } else {
+        throw 'Key System not supported';
+    }
+}
+
+function onKeyError(event) {
+    window.console.error('Key error', event.target);
+}
+
+function onKeyAdded(event) {
+    window.console.log('Key added', event.target);
+}
+
+function licenseRequestReady(event) {
+    let session = event.target;
+    let message = event.message;
+    let request = new XMLHttpRequest();
+    request.responseType = 'text';
+    request.session = session;
+    request.addEventListener('load', licenseReceived, false);
+    request.addEventListener('error', onLicenseError, false);
+    request.open('POST', offerings['hls-fairplay'].properties.license_servers[0], true);
+    request.setRequestHeader('Content-type', 'application/json');
+    setCommonHeaders(request);
+    let params = '{"spc":"' + base64EncodeUint8Array(message) + '","assetId":"' + encodeURIComponent(session.contentId) + '"}';
+    request.send(params);
+}
+
+function onLicenseError(event) {
+    window.console.error('License request error', event.target);
+}
+
+function licenseReceived(event) {
+    let request = event.target;
+    let session = request.session;
+    // response can be of the form: '\n<ckc>base64encoded</ckc>\n'
+    // so trim the excess:
+    let keyText = request.responseText.trim();
+    // keyText = JSON.parse(keyText);
+    // keyText = keyText.ckc
+    if (keyText.substr(0, 5) === '<ckc>' && keyText.substr(-6) === '</ckc>')
+        keyText = keyText.slice(5,-6);
+    let key = base64DecodeUint8Array(keyText);
+    session.update(key);
+}
+
+function setCommonHeaders(req) {
+    // no caching for development
+    // req.setRequestHeader('Cache-Control', 'no-store');
+    req.setRequestHeader('Authorization', 'Bearer ' + authToken);
+}
+
+function arrayToString(array) {
+    let uint16array = new Uint16Array(array.buffer);
+    return String.fromCharCode.apply(null, uint16array);
+}
+
+function stringToArray(string) {
+    let buffer = new ArrayBuffer(string.length*2); // 2 bytes for each char
+    let array = new Uint16Array(buffer);
+    for (let i=0, strLen=string.length; i<strLen; i++)
+        array[i] = string.charCodeAt(i);
+    return array;
+}
+
+function base64DecodeUint8Array(input) {
+    let raw = window.atob(input);
+    let rawLength = raw.length;
+    let array = new Uint8Array(new ArrayBuffer(rawLength));
+    for(let i = 0; i < rawLength; i++)
+        array[i] = raw.charCodeAt(i);
+    return array;
+}
+
+function base64EncodeUint8Array(input) {
+    let keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let output = '';
+    let chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+    let i = 0;
+
+    while (i < input.length) {
+        chr1 = input[i++];
+        chr2 = i < input.length ? input[i++] : Number.NaN; // Not sure if the index
+        chr3 = i < input.length ? input[i++] : Number.NaN; // checks are needed here
+
+        enc1 = chr1 >> 2;
+        enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+        enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+        enc4 = chr3 & 63;
+
+        if (isNaN(chr2)) {
+            enc3 = enc4 = 64;
+        } else if (isNaN(chr3)) {
+            enc4 = 64;
+        }
+        output += keyStr.charAt(enc1) + keyStr.charAt(enc2) +
+            keyStr.charAt(enc3) + keyStr.charAt(enc4);
+    }
+    return output;
+}
+</script>
+</head>
+
+<body onload='sendOptionsRequest()'>
+    <video controls autoplay preload='auto' width=100%></video>
+</body>
+
+</html>
+
