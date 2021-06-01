@@ -61,8 +61,9 @@ class ContentKeyDelegate: NSObject, AVContentKeySessionDelegate {
     }
     
     // TODO load this from Streams.plist
-    let drmUrl: String = "https://host-209-51-161-245.contentfabric.io/ks/fps/"
-    let authToken: String = "eyJxc3BhY2VfaWQiOiJpc3BjMlJVb1JlOWVSMnYzM0hBUlFVVlNwMXJZWHp3MSIsInFsaWJfaWQiOiJpbGliMzFSRDhQWHJzZHZTcHB5MnA3OExVM0M5SmRNRSIsImFkZHIiOiIweDUyODI2M0JkMTBiZkU1MDg1ZjEyN0UxMzAxNmZGMDgyNDlDRkM2RjAiLCJxaWQiOiJpcV9fMno0aVNnTHNjVzliTnduVDRONW1jVUZkVndHWSIsImdyYW50IjoicmVhZCIsInR4X3JlcXVpcmVkIjpmYWxzZSwiaWF0IjoxNjAxNzE4NzY2LCJleHAiOjE2MDE4MDUxNjYsImN0eCI6eyJ1c3IiOnsiYWNjZXNzX3RpbWUiOiIxNjAxNzE4NzY2MjIzIiwiY29udGVudF9pZCI6ImlxX18yejRpU2dMc2NXOWJOd25UNE41bWNVRmRWd0dZIiwiZHJtIjoiIiwiZm9ybWF0IjoiIiwiaG9zdG5hbWUiOiJob3N0LTY2LTIyMC0zLTg1LmNvbnRlbnRmYWJyaWMuaW8iLCJsYW5ndWFnZSI6ImVuLVVTIiwidXNlcl9hZGRyZXNzIjoiMHg1MjgyNjNiZDEwYmZlNTA4NWYxMjdlMTMwMTZmZjA4MjQ5Y2ZjNmYwIiwidXNlcl9zdHJpbmciOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMC4xNTsgcnY6ODEuMCkgR2Vja28vMjAxMDAxMDEgRmlyZWZveC84MS4wIn19LCJhdXRoX3NpZyI6IkVTMjU2S19DUzk5bUtBbzduZnVRa2QxOGlYM0tpOEdhWmVFd25EelNKTm1rQXFzeTcyY0tuQ0xWUjNnYWRFR2tkcjJVZDlrcDVrQkQyOVV6QlVNdzVUSFJQNk5IekNkNSIsImFmZ2hfcGsiOiIifQ==.RVMyNTZLX0hpYmhHQ1JBVTFDSFo1dENqQXFhYm9wMlpZU29jTVdyY1h4TDRrWVV6ZEdRc3BKbnh2Zk1UeXVIOEdZQTFneFM0b1ZmakNtclBDYlA2cW53Y1NYTjJDZFU2"
+    //let drmUrl: String = "https://host-209-51-161-245.contentfabric.io/ks/fps/"
+    let drmUrl: String = "https://host-66-220-3-86.contentfabric.io/ks/fps/"
+    let authToken: String = "ascsj_WZBpFkvBFWafEUkRT5xNvVcm9gg3qQNCdwujNePZ8mEzQ7pWBuLwb26h1h92SHrszifa6v46YQB1KQULo8ydwyPdcycvt3EW5NQAqP4oL5MbnDFxyhH9Y5NFT4dco1ohLr9YrHokrXnZEA1VwZce8hiUJMfJhBi8VTRBtFM4Pp3TYT2nzvSBTRmLxXbS8BxLqzQg9zP4rxScQAhNskP6AZ1RbcxGQqSHX4y1PSn2kCk2a375pvRWmgTL518HjXni7DHQurN1x8TGkTjfU2AqYtqZ5rZZ9Hx6as4oB8JH4itgMjNPuS1bLRZ2NyriP2pBBtR34imUnaTykkmS7L8eNz5xVAGprErXqXsgKk3KbHoh37QofswVVUYYxFQaVfeBPdbuRxTWCrgQz9GS1a3EDrKucqfcFzQkFm4FxkhKYQpmePwSSkmsGCpoWV8RFDNPWgKzXHe2djg7HShbmjXUpfmQNXK11aL6VE5gh2BaTBek1TNWQJ93sQrGNSKFcDZNm1HhRQwLNBCvixJi6du3CquAVxJfzYrRTrM9P73gW34BHQwp17bTJTr1oHKRdPWX9bw8rqKxSjgzZ5gytRb77XFVGJPeG4G9ygMFjEirJ6mCTRStdUXbVCW6vgPzuy5rLm2DEixg24PtYS97NaLfAAotuBvdQHgjypBuu3fSUSxRXDn9fHpT2wdfa3GJJBtZfQUXGgSE1cjL34x2HGYDheE32LNiHdH8xZLYhEH6mYukSkihVaZMjbFjcRBvYxwQzxhf6pAp2AkyRpJgQjJeQxYGAvfkfCuepPgFgKN8gSsdopq3f21nqrHbNoKWGtdpNHYVw8GUUGsUKY6FuFEzxYA1LSUYWGjDHHqZTsL8QnHNg1xoNoZJPi8fAWQ7xKFGMVB4WymSvsak6SLTz7Q4rmoxN3stmEd7vwfzYhzomgvsqq9L6AABAMkeEBv5AtkuA4e93tTLCBHyov3yMhrBXopLVXUV8xJAqhVjQGUrAuqgwx5xKtbTiRbDe8ByFPR5k9bGJVuqU8UjJXg64LXTfkuCeaqFBye4Z2gFJt91H9GHsJz6xq4SCyta3c5c7MZXMhEd8au6PV6Zi38CxtykEfSB2GV8G.RVMyNTZLX0Y4ZEM0d2toZDVtTGZZVnJOQUxzWjhDRVp3TnB2dWZQOTF6a1l3djhwVmhWUFpRUVlhN2k1VURjWk41eEdhQnM4U3lYcDdKRmRpc3RkOGUxdXdlTTlaaHJh"
     func requestContentKeyFromKeySecurityModule(spcData: Data, assetID: String) throws -> Data {
         print("ContentKeyDelegate.requestContentKeyFromKeySecurityModule assetID " + assetID)
         
@@ -201,8 +202,29 @@ class ContentKeyDelegate: NSObject, AVContentKeySessionDelegate {
     }
     
     // Informs the receiver a content key request has failed.
-    func contentKeySession(_ session: AVContentKeySession, contentKeyRequest keyRequest: AVContentKeyRequest, didFailWithError err: Error) {
-        print("ContentKeyDelegate.contentKeySession didFailWithError " + err.localizedDescription)
+    func contentKeySession(_ session: AVContentKeySession,
+                           contentKeyRequest keyRequest: AVContentKeyRequest,
+                           didFailWithError err: Error) {
+        print("ContentKeyDelegate.contentKeySession contentKeyRequest \(keyRequest.identifier ?? "?") didFailWithError \(err.localizedDescription)")
+    }
+    
+    func contentKeySession(
+        _ session: AVContentKeySession,
+        contentKeyRequestDidSucceed keyRequest: AVContentKeyRequest)
+    {
+        print("ContentKeyDelegate.contentKeySession contentKeyRequestDidSucceed \(keyRequest.identifier ?? "?")")
+    }
+    
+    func contentKeySessionContentProtectionSessionIdentifierDidChange(
+        _ session: AVContentKeySession)
+    {
+        print("ContentKeyDelegate.contentKeySession contentKeySessionContentProtectionSessionIdentifierDidChange \(session.contentProtectionSessionIdentifier ?? Data())")
+    }
+    
+    func contentKeySessionDidGenerateExpiredSessionReport(
+        _ session: AVContentKeySession)
+    {
+        print("ContentKeyDelegate.contentKeySession contentKeySessionDidGenerateExpiredSessionReport")
     }
     
     // MARK: API
